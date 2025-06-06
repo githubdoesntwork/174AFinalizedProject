@@ -1,20 +1,18 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
-/* ------------------------------------------------------------------ */
-/*  GLOBAL CONSTANTS & STATE                                          */
-/* ------------------------------------------------------------------ */
-const GRAVITY         = new THREE.Vector3(0, -9.81, 0);
-const RESTITUTION     = 0.6;
-let BOX_SIZE          = new THREE.Vector3(5, 5, 5);
-const MEGA_BOX_SIZE   = new THREE.Vector3(20, 20, 20);
-const MEGA_SPHERES    = 1000;
+//constants
+const GRAVITY = new THREE.Vector3(0, -9.81, 0);
+const RESTITUTION = 0.6;
+let BOX_SIZE = new THREE.Vector3(5, 5, 5);
+const MEGA_BOX_SIZE = new THREE.Vector3(20, 20, 20);
+const MEGA_SPHERES = 1000;
 
-let timeScale    = 1;
+let timeScale = 1;
 let windStrength = 0;    // default 0
-let boxMode      = false;
+let boxMode = false;
 
-const OBJECTS = [];         // { type: "sphere", mesh, size, velocity }
+const OBJECTS = [];     
 const puffParticles = [];   // for explosion “puffs”
 
 let windVector = new THREE.Vector3(1, 0, 0); // initial wind direction +X
@@ -22,9 +20,7 @@ let scene, camera, renderer, controls;
 let boxWalls = [];
 let clock = new THREE.Clock();
 
-/* ------------------------------------------------------------------ */
-/*  INITIALIZE SCENE                                                   */
-/* ------------------------------------------------------------------ */
+// making the scene
 init();
 animate();
 
@@ -51,9 +47,9 @@ function init() {
   // OrbitControls
   controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
-  // Clamp so camera can’t go below horizon (y < 0)
+  // Clamp camera
   controls.minPolarAngle = 0;
-  controls.maxPolarAngle = Math.PI / 2;
+  controls.maxPolarAngle = Math.PI / 2 - 0.11; // i thought that 0.11 looks good
 
   // Lighting
   scene.add(new THREE.AmbientLight(0xffffff, 0.5));
@@ -63,12 +59,12 @@ function init() {
   dirLight.shadow.mapSize.width = 2048;
   dirLight.shadow.mapSize.height = 2048;
   const d = 30;
-  dirLight.shadow.camera.left   = -d;
-  dirLight.shadow.camera.right  =  d;
-  dirLight.shadow.camera.top    =  d;
+  dirLight.shadow.camera.left = -d;
+  dirLight.shadow.camera.right =  d;
+  dirLight.shadow.camera.top  =  d;
   dirLight.shadow.camera.bottom = -d;
-  dirLight.shadow.camera.near   = 0.5;
-  dirLight.shadow.camera.far    = 100;
+  dirLight.shadow.camera.near = 0.5;
+  dirLight.shadow.camera.far = 100;
   scene.add(dirLight);
 
   // Ground (thick box: 50×1×50 centered at y = –0.5)
@@ -79,7 +75,7 @@ function init() {
   ground.receiveShadow = true;
   scene.add(ground);
 
-  // Starfield
+  // stars in the distance to look cool
   addStars();
 
   // Initial small box
@@ -101,9 +97,7 @@ function init() {
   window.addEventListener("resize", onWindowResize);
 }
 
-/* ------------------------------------------------------------------ */
-/*  ADD “STAR” PARTICLES FOR BACKGROUND                                 */
-/* ------------------------------------------------------------------ */
+// star background
 function addStars() {
   const starGeo = new THREE.BufferGeometry();
   const starCnt = 2000;
@@ -122,9 +116,7 @@ function addStars() {
   scene.add(new THREE.Points(starGeo, starMat));
 }
 
-/* ------------------------------------------------------------------ */
-/*  SPAWN A SPHERE                                                      */
-/* ------------------------------------------------------------------ */
+// make a sphere
 function addObject(type, position = randomSpawn()) {
   const size = 0.5; // radius
   const geo = new THREE.SphereGeometry(size, 16, 16);
@@ -147,9 +139,7 @@ function addObject(type, position = randomSpawn()) {
   });
 }
 
-/* ------------------------------------------------------------------ */
-/*  RANDOM SPAWN OUTSIDE BOX                                             */
-/* ------------------------------------------------------------------ */
+// spawning ball locations
 function randomSpawn() {
   return new THREE.Vector3(
     (Math.random() - 0.5) * 10,
@@ -158,9 +148,6 @@ function randomSpawn() {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  RANDOM SPAWN INSIDE BOX                                              */
-/* ------------------------------------------------------------------ */
 function randomSpawnInsideBox(boxSize) {
   const hx = boxSize.x / 2 - 0.5;
   const hy = boxSize.y / 2 - 0.5;
@@ -172,17 +159,14 @@ function randomSpawnInsideBox(boxSize) {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  CREATE BOX WITHOUT BOTTOM (5 WALLS)                                  */
-/* ------------------------------------------------------------------ */
+// making a box
 function createBox(boxSize) {
   removeBox();
   const halfW = boxSize.x / 2;
   const halfH = boxSize.y / 2;
   const halfD = boxSize.z / 2;
 
-  // Epsilon is negative → pushes each wall’s bottom below the ground,
-  // eliminating the visible artifact.
+  // epsilon pushes the wall into the ground so we dont get ugly clipping artifacts
   const epsilon = -0.01;
 
   const mat = new THREE.MeshStandardMaterial({
@@ -245,9 +229,7 @@ function createBox(boxSize) {
   boxMode = true;
 }
 
-/* ------------------------------------------------------------------ */
-/*  REMOVE BOX WALLS                                                     */
-/* ------------------------------------------------------------------ */
+// delete box
 function removeBox() {
   for (let w of boxWalls) {
     scene.remove(w);
@@ -258,9 +240,7 @@ function removeBox() {
   boxMode = false;
 }
 
-/* ------------------------------------------------------------------ */
-/*  SPAWN “PUFF” WHEN SPHERE EXPLODES                                    */
-/* ------------------------------------------------------------------ */
+// smoke puff
 function spawnPuff(pos) {
   const geo = new THREE.SphereGeometry(1.0, 8, 8);
   const mat = new THREE.MeshBasicMaterial({
@@ -274,13 +254,11 @@ function spawnPuff(pos) {
   puffParticles.push({ mesh: puff, life: 0 });
 }
 
-/* ------------------------------------------------------------------ */
-/*  PHYSICS UPDATE + PUFF ANIMATION                                      */
-/* ------------------------------------------------------------------ */
+// main physics handler
 function updatePhysics(delta) {
   const dynamics = OBJECTS.filter(o => o.type === "sphere");
 
-  // 1) Integrate + ground bounce
+  // add gravity and wind vectors
   dynamics.forEach(body => {
     const acc = GRAVITY.clone().add(
       windVector.clone().multiplyScalar(windStrength)
@@ -289,7 +267,7 @@ function updatePhysics(delta) {
     body.velocity.addScaledVector(acc, delta);
     body.mesh.position.addScaledVector(body.velocity, delta);
 
-    // Ground collision & low friction
+    // Ground collision and friction
     if (body.mesh.position.y < body.size) {
       body.mesh.position.y = body.size;
       if (body.velocity.y < 0) {
@@ -299,7 +277,7 @@ function updatePhysics(delta) {
       }
     }
 
-    // Box confinement if boxMode
+    // confinement if theres a box
     if (boxMode) {
       const halfW = BOX_SIZE.x / 2;
       const halfH = BOX_SIZE.y - body.size;
@@ -313,7 +291,7 @@ function updatePhysics(delta) {
         body.mesh.position.x = -halfW + body.size;
         body.velocity.x *= -RESTITUTION;
       }
-      // Y (top)
+      // Y
       if (body.mesh.position.y > halfH) {
         body.mesh.position.y = halfH;
         body.velocity.y *= -RESTITUTION;
@@ -329,7 +307,7 @@ function updatePhysics(delta) {
     }
   });
 
-  // 2) Sphere-sphere collisions
+  // sphere collision
   for (let i = 0; i < dynamics.length; i++) {
     for (let j = i + 1; j < dynamics.length; j++) {
       const A = dynamics[i];
@@ -356,7 +334,7 @@ function updatePhysics(delta) {
     }
   }
 
-  // 3) Puff animations
+  // puff animation
   for (let i = puffParticles.length - 1; i >= 0; i--) {
     const p = puffParticles[i];
     p.life += delta;
@@ -371,19 +349,17 @@ function updatePhysics(delta) {
   }
 }
 
-/* ------------------------------------------------------------------ */
-/*  RAYCAST CLICK → SPHERE EXPLOSION                                    */
-/* ------------------------------------------------------------------ */
+// mouse handlng
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
 function onClick(event) {
-  // Compute mouse NDC (Normalized Device Coordinates)
+  // Compute mouse coords
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
   raycaster.setFromCamera(mouse, camera);
 
-  // Only intersect sphere meshes
+  // ignore except sphere meshes
   const sphereMeshes = OBJECTS.filter(o => o.type === "sphere").map(o => o.mesh);
   const intersects = raycaster.intersectObjects(sphereMeshes, false);
 
@@ -416,9 +392,7 @@ function onClick(event) {
   }
 }
 
-/* ------------------------------------------------------------------ */
-/*  ANIMATION LOOP                                                      */
-/* ------------------------------------------------------------------ */
+// animation loop
 function animate() {
   requestAnimationFrame(animate);
   const dt = clock.getDelta() * timeScale;
@@ -427,9 +401,7 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-/* ------------------------------------------------------------------ */
-/*  SPAWN THREE DEFAULT SPHERES                                          */
-/* ------------------------------------------------------------------ */
+// spawn 3 spheres
 function spawnDefaultSpheres() {
   // Remove existing spheres
   OBJECTS.forEach(o => scene.remove(o.mesh));
@@ -441,9 +413,7 @@ function spawnDefaultSpheres() {
   addObject("sphere");
 }
 
-/* ------------------------------------------------------------------ */
-/*  SET UP UI: Sliders, Buttons, Dial                                   */
-/* ------------------------------------------------------------------ */
+// ui handling
 function setupUI() {
   document.getElementById("timeScale").oninput = e => {
     timeScale = parseFloat(e.target.value);
@@ -460,19 +430,19 @@ function setupUI() {
   // Add Sphere button
   document.getElementById("spawnSphere").onclick = () => addObject("sphere");
 
-  // Enable small box → reset scene
+  // Enable small box 
   document.getElementById("enableBox").onclick = () => {
     createBox(new THREE.Vector3(5, 5, 5));
     spawnDefaultSpheres();
   };
 
-  // Disable box → reset scene
+  // Disable box 
   document.getElementById("disableBox").onclick = () => {
     removeBox();
     spawnDefaultSpheres();
   };
 
-  // Mega box → reset scene
+  // Mega box 
   document.getElementById("megaBox").onclick = () => {
     createBox(new THREE.Vector3(20, 20, 20));
     // Clear existing spheres
@@ -486,23 +456,18 @@ function setupUI() {
   };
 }
 
-/* ------------------------------------------------------------------ */
-/*  WIND DIAL: DRAW + INTERACTION                                       */
-/* ------------------------------------------------------------------ */
 function setupWindDial() {
   const dial = document.getElementById("windDial");
   const ctx = dial.getContext("2d");
 
   function drawDial(angle) {
     ctx.clearRect(0, 0, 80, 80);
-    // Outer circle
     ctx.beginPath();
     ctx.arc(40, 40, 38, 0, 2 * Math.PI);
     ctx.strokeStyle = "white";
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Arm
     const armX = 40 + 36 * Math.cos(angle);
     const armY = 40 + 36 * Math.sin(angle);
     ctx.beginPath();
@@ -513,7 +478,7 @@ function setupWindDial() {
     ctx.stroke();
   }
 
-  drawDial(0); // initially pointing +X
+  drawDial(0); 
 
   dial.addEventListener("mousedown", e => {
     function updateAngle(evt) {
@@ -537,9 +502,7 @@ function setupWindDial() {
   });
 }
 
-/* ------------------------------------------------------------------ */
-/*  WINDOW RESIZE HANDLER                                              */
-/* ------------------------------------------------------------------ */
+// in case window is resized
 function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
