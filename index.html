@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sphere Physics Playground</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; }
+  </style>
+</head>
+<body>
+  <!-- MERGED UI PANEL ON LEFT -->
+  <div id="uiPanel" class="panel">
+    <h3>Controls</h3>
+
+    <!-- Time Scale Slider -->
+    <div class="slider">
+      <label>Time Scale: <span id="timeScaleLabel">1.0×</span></label>
+      <input id="timeScale" type="range" min="0.1" max="3" step="0.1" value="1" />
+    </div>
+
+    <!-- Wind Strength Slider -->
+    <div class="slider">
+      <label>Wind Strength: <span id="windLabel">0.0</span></label>
+      <input id="wind" type="range" min="0" max="5" step="0.1" value="0" />
+    </div>
+
+    <!-- Wind Direction Dial -->
+    <div class="dial-container">
+      <label>Wind Direction</label>
+      <canvas id="windDial" width="80" height="80"></canvas>
+    </div>
+
+    <hr />
+
+    <!-- Spawn Sphere Button -->
+    <button id="spawnSphere" class="sphere">Add Sphere</button>
+
+    <hr />
+
+    <!-- Scene Mode Buttons -->
+    <h3>Scene Mode</h3>
+    <button id="enableBox">Enable Box Mode</button>
+    <button id="disableBox">Disable Box Mode</button>
+    <button id="megaBox">Mega Box (20×20×20 + 1000 Spheres)</button>
+  </div>
+
+  <!-- HELP PANEL -->
+  <div id="help" class="panel">
+    <strong>Help</strong><br>
+    • Mouse – rotate / pan / zoom (OrbitControls)<br>
+    • Click any sphere to “explode” it (puff + impulse)<br>
+    • “Mega Box” spawns 1000 spheres inside a 20×20×20 box<br>
+  </div>
+
+  <!-- THREE.JS & ORBITCONTROLS -->
+  <script src="https://unpkg.com/three@0.161.0/build/three.min.js"></script>
+  <script src="https://unpkg.com/three@0.161.0/examples/js/controls/OrbitControls.js"></script>
+
+  <!-- MAIN.JS -->
+  <script src="main.js" type="module"></script>
+</body>
+</html>

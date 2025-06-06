@@ -1,0 +1,83 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+body, button, input {
+  font-family: Inter, Arial, sans-serif;
+  color: #fff;
+}
+
+.panel {
+  position: fixed;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 12px 16px;
+  border: 1px solid #444;
+  backdrop-filter: blur(3px);
+  border-radius: 6px;
+  font-size: 14px;
+  z-index: 10;
+}
+
+#uiPanel {
+  top: 12px;
+  left: 12px;
+  width: 240px;
+}
+
+#help {
+  bottom: 12px;
+  left: 12px;
+  width: 260px;
+  font-size: 12px;
+}
+
+h3 {
+  margin: 0 0 6px;
+  font-size: 15px;
+}
+
+button {
+  display: block;
+  width: 100%;
+  margin: 6px 0;
+  padding: 8px;
+  border: 1px solid #666;
+  background: #222;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: filter 0.2s ease;
+  font-size: 14px;
+}
+
+button:hover {
+  filter: brightness(1.2);
+}
+
+button.sphere {
+  background: #661818;
+}
+
+.slider {
+  margin: 8px 0;
+}
+
+input[type=range] {
+  width: 100%;
+}
+
+.dial-container {
+  margin-top: 10px;
+}
+
+.dial-container label {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 4px;
+  text-align: center;
+}
+
+#windDial {
+  border: 1px solid #444;
+  border-radius: 50%;
+  background-color: #111;
+  display: block;
+  margin: 0 auto;
+}

@@ -1,0 +1,26 @@
+{
+  "name": "174afinalizedproject",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/githubdoesntwork/174AFinalizedProject.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/githubdoesntwork/174AFinalizedProject/issues"
+  },
+  "homepage": "https://github.com/githubdoesntwork/174AFinalizedProject#readme",
+  "dependencies": {
+    "three": "^0.177.0"
+  },
+  "devDependencies": {
+    "vite": "^6.3.5"
+  }
+}
