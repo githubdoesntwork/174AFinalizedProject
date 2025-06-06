@@ -8,6 +8,10 @@ let BOX_SIZE = new THREE.Vector3(5, 5, 5);
 const MEGA_BOX_SIZE = new THREE.Vector3(20, 20, 20);
 const MEGA_SPHERES = 1000;
 
+let boostField = null;   // will hold the booster
+const BOOSTER_SIZE = 5;   // side length of booster cube 
+const BOOSTER_ACCEL = 10;    // vertical acceleration inside booster
+
 let timeScale = 1;
 let windStrength = 0;    // default 0
 let boxMode = false;
@@ -240,6 +244,36 @@ function removeBox() {
   boxMode = false;
 }
 
+function createBoosterField() {
+  // first remove any existing booster
+  removeBoosterField();
+
+  // Build a transparent yellow cube of side BOOSTER_SIZE
+  const geo = new THREE.BoxGeometry(BOOSTER_SIZE, BOOSTER_SIZE, BOOSTER_SIZE);
+  const mat = new THREE.MeshStandardMaterial({
+    color: 0xffff00,
+    transparent: true,
+    opacity: 0.3,
+    roughness: 0.5,
+    metalness: 0.2
+  });
+  boostField = new THREE.Mesh(geo, mat);
+  boostField.position.set(0, BOOSTER_SIZE / 2, 0); // sit on the ground plane (y=0) so top at y=5
+  boostField.receiveShadow = false;
+  boostField.castShadow = false;
+  scene.add(boostField);
+}
+
+// delete booster
+function removeBoosterField() {
+  if (boostField) {
+    scene.remove(boostField);
+    boostField.geometry.dispose();
+    boostField.material.dispose();
+    boostField = null;
+  }
+}
+
 // smoke puff
 function spawnPuff(pos) {
   const geo = new THREE.SphereGeometry(1.0, 8, 8);
@@ -260,9 +294,20 @@ function updatePhysics(delta) {
 
   // add gravity and wind vectors
   dynamics.forEach(body => {
-    const acc = GRAVITY.clone().add(
-      windVector.clone().multiplyScalar(windStrength)
-    );
+    // handle boost
+    if (boostField) {
+      // Check if the sphere’s center is within the booster’s AABB
+      const pos = body.mesh.position;
+      const half = BOOSTER_SIZE / 2;
+      // boost is at (0, half, 0)
+      if (pos.x > -half && pos.x < +half &&
+        pos.z > -half && pos.z < +half &&
+        pos.y - body.size < BOOSTER_SIZE) {
+        body.velocity.y += (BOOSTER_ACCEL + 9.81) * delta;
+      }
+    }
+
+    const acc = GRAVITY.clone().add(windVector.clone().multiplyScalar(windStrength));
 
     body.velocity.addScaledVector(acc, delta);
     body.mesh.position.addScaledVector(body.velocity, delta);
@@ -430,30 +475,33 @@ function setupUI() {
   // Add Sphere button
   document.getElementById("spawnSphere").onclick = () => addObject("sphere");
 
-  // Enable small box 
-  document.getElementById("enableBox").onclick = () => {
+    // Small Box (5×5×5)
+    document.getElementById("enableBox").onclick = () => {
     createBox(new THREE.Vector3(5, 5, 5));
+    removeBoosterField();           
     spawnDefaultSpheres();
-  };
+    };
 
-  // Disable box 
-  document.getElementById("disableBox").onclick = () => {
+  // No Box
+    document.getElementById("disableBox").onclick = () => {
     removeBox();
+    removeBoosterField();        
     spawnDefaultSpheres();
-  };
+    };
 
-  // Mega box 
-  document.getElementById("megaBox").onclick = () => {
+  // Large Box
+    document.getElementById("megaBox").onclick = () => {
     createBox(new THREE.Vector3(20, 20, 20));
     // Clear existing spheres
     OBJECTS.forEach(o => scene.remove(o.mesh));
     OBJECTS.length = 0;
     // Spawn 1000 inside box
     for (let i = 0; i < MEGA_SPHERES; i++) {
-      const pos = randomSpawnInsideBox(BOX_SIZE);
-      addObject("sphere", pos);
+        const pos = randomSpawnInsideBox(BOX_SIZE);
+        addObject("sphere", pos);
     }
-  };
+    createBoosterField();         
+    };
 }
 
 function setupWindDial() {
